@@ -1,0 +1,14 @@
+{
+  "name": "videojs-live-card",
+  "author": "mister-ben &lt;git@misterben.me&gt;",
+  "license": "MIT",
+  "main": [
+    "dist/videojs-live-card.css",
+    "dist/videojs-live-card.min.js"
+  ],
+  "keywords": [
+    "videojs",
+    "videojs-plugin"
+  ]
+}
+

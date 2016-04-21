@@ -1,0 +1,11 @@
+// Sass for videojs-live-card
+
+.video-js {
+
+  // This class is added to the video.js element by the plugin by default.
+  & .vjs-live-card {
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center center;
+  }
+}
