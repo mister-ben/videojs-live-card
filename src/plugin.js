@@ -18,7 +18,6 @@ const defaults = {
  * @param    {Object} [options={}]
  */
 const onPlayerReady = (player, options) => {
-  console.log('player', options);
   player.addClass('vjs-live-card');
   
   let modal = new LiveCardModal(player, {

@@ -17,8 +17,6 @@ class LiveCardModal extends ModalDialog {
    * @param  {Object} [options]
    */
   constructor(player, options) {
-    console.log('modal', options);
-    
     super(player, options);
     this.on(player, 'error', this.open);
     this.el_.style.backgroundImage = `url(${options.imageUrl})`;
