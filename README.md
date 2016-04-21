@@ -1,6 +1,8 @@
 # videojs-live-card
 
-Placeholder for non-live live streams
+Placeholder for non-live live streams.
+
+WORK IN PROGRESS: this is crude and just shows the placeholder on any error event
 
 ## Table of Contents
 
