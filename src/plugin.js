@@ -1,5 +1,6 @@
 import videojs from 'video.js';
 import LiveCardModal from './placeholder.js';
+import './holding-text.js'; 
 
 // Default options for the plugin.
 const defaults = {
