@@ -3,7 +3,8 @@ import LiveCardModal from './placeholder.js';
 
 // Default options for the plugin.
 const defaults = {
-  imageUrl: 'https://upload.wikimedia.org/wikipedia/en/1/1f/TCF.jpg'
+  imageUrl: 'https://upload.wikimedia.org/wikipedia/en/1/1f/TCF.jpg',
+  holdText: 'The live stream has not started'
 };
 
 /**
@@ -21,10 +22,11 @@ const onPlayerReady = (player, options) => {
   player.addClass('vjs-live-card');
   
   let modal = new LiveCardModal(player, {
-    label: player.localize('End card with related videos'),
+    label: player.localize('Live Error Card'),
     temporary: false,
     uncloseable: true,
-    imageUrl: options.imageUrl
+    imageUrl: options.imageUrl,
+    holdText: options.holdText
   });
   
   player.liveCardModal = modal;
@@ -33,7 +35,7 @@ const onPlayerReady = (player, options) => {
 };
 
 /**
- * A video.js plugin.
+ * A video.js plugin
  *
  * In the plugin function, the value of `this` is a video.js `Player`
  * instance. You cannot rely on the player being in a "ready" state here,
