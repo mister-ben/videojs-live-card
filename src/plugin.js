@@ -4,7 +4,7 @@ import LiveCardModal from './placeholder.js';
 // Default options for the plugin.
 const defaults = {
   imageUrl: 'https://upload.wikimedia.org/wikipedia/en/1/1f/TCF.jpg',
-  holdText: 'Live not ready yet'
+  holdText: 'The live stream has not started'
 };
 
 /**
