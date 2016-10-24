@@ -13,8 +13,16 @@
   }
 
   & .vjs-placeHolderMsg {
-	font-size: 3em;
-  background-color: rgba(128,128,128,0.85);
-	color: #FFFF00;
+    font-size: 3em;
+    background-color: rgba(128,128,128,0.85);
+    color: #FFFF00;
+  }
+
+  & .vjs-placeHolderSpin {
+    background:url(http://loadinggif.com/generated-image?imageId=22&bgColor=%23ffffff&fgColor=%23ff7c00&transparentBg=1&download=0&random=0.5277500189998274) no-repeat;
+    width: 128px;
+    height: 15px;
+    margin: auto;
+    margin-top: 5%;
   }
 }
