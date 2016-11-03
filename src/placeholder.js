@@ -20,8 +20,14 @@ class LiveCardModal extends ModalDialog {
     super(player, options);
     this.on(player, 'error', function () {
       //display error card if no stream found 
-      var errNo = player.error().code;
-      var duration = player.duration();
+      let errNo = player.error().code;
+      let duration = player.duration();
+
+      //Firefox reads network error #2 so we'll convert to 4 for simplicity
+      if((navigator.userAgent.toLowerCase().indexOf('firefox') > -1) && errNo === 2){
+        errNo = 4;
+      }
+
       if ((errNo === 4 && duration === 0) || (errNo === 4 && duration === -1) || (errNo === 4 && duration === Infinity)){
         console.log('*** ERROR ***');
         console.log(errNo);
@@ -29,146 +35,103 @@ class LiveCardModal extends ModalDialog {
         console.log(duration);
         this.open();
         player.error(null);
-      }
 
-    this.el_.style.backgroundImage = `url(${options.imageUrl})`;
-    let placeHolderMsg = document.createElement('label'),
-        placeHolderSpin = document.createElement('span');
+        this.el_.style.backgroundImage = `url(${options.imageUrl})`;
+        let placeHolderMsg = document.createElement('label'),
+            placeHolderSpin = document.createElement('span');
 
-    placeHolderMsg.className = 'vjs-placeHolderMsg';
-    placeHolderSpin.className = 'vjs-placeHolderSpin';
+        placeHolderMsg.className = 'vjs-placeHolderMsg';
+        placeHolderSpin.className = 'vjs-placeHolderSpin';
 
-    placeHolderMsg.innerHTML = options.holdText;
-    this.el_.appendChild(placeHolderMsg);
-    this.el_.appendChild(placeHolderSpin);
-
-    /* SCRIPT IN DRAFT VERSION, NOT CURRENTLY WORKING AS THE ASSET DOESN'T PLAY ONCE VAILD TS SEGMENTS HAVE BEEN FOUND. PLEASE READ COMMENTS IN GITHUB FOR MORE*/
-    
-    //Start pinging the source file for a response and dynamically switch to the live media when ready. This was tested with DVR and NON-DVR environments but only through the Brightcove live module which expects an m3u8 as a valid response.
-
-      //trigger spin
-      let spin = document.getElementsByClassName('vjs-placeHolderSpin');
-      spin[0].style.display='block';
-      
-      let src_array = player.mediainfo.sources,
-
-      //we assume the first item in the array is M3U8 when using the live module and only this one will be tested in this release
-      src_m3u8 = src_array[0].src;
-
-      console.log('SOURCES: ');
-      console.log(src_array);
-
-      console.log('M3U8: ');
-      console.log(src_m3u8);
-
-      //fire the checklive function
-      checkLive(src_m3u8);
-
-      xhttp.onreadystatechange = function() {
+        placeHolderMsg.innerHTML = options.holdText;
+        this.el_.appendChild(placeHolderMsg);
+        this.el_.appendChild(placeHolderSpin);
+        
+        //Start pinging the source file for a response and dynamically switch to the live media when ready. This was tested with DVR and NON-DVR environments but only through the Brightcove live module which expects an m3u8 as a valid response.
 
         //trigger spin
+        global.spin = document.getElementsByClassName('vjs-placeHolderSpin');
         spin[0].style.display='block';
-          
-          //if xhr call has been made but there's an error in the response (most likely response is 'Stream not found' then there is no live stream yet as the current manifest is empty)
-          if (xhttp.readyState == 4 && xhttp.status == 404){
-            console.log('xhttp onreadystatechange with status 404: ');
-            console.log(xhttp.responseText);          
+        
+        let src_array = player.mediainfo.sources;
 
-            //hide spin
-            spin[0].style.display='none';
+        //we assume the first item in the array is M3U8 when using the live module and only this one will be tested in this release
+        global.src_m3u8 = src_array[0].src;
 
-            console.log('...checking again in 15 seconds...');
+        console.log('SOURCES: ');
+        console.log(src_array);
 
-            //check again in 15 seconds
-              setTimeout(function() {
-                checkLive(src_m3u8);
-              }, 15000);
+        console.log('M3U8: ');
+        console.log(src_m3u8);
 
-          //if xhr call has been made and is successful, we still need to check the response of each individual manifest in the master one
-          }else if (xhttp.readyState == 4 && xhttp.status == 200){
-            let xhttpResponse = xhttp.responseText,
-                xhttpResponseArray,
-                xhttpResponseArrayCleaned = new Array(),
-                nRequest = new Array();
+        //fire the checklive function
+        videojs.xhr(src_m3u8, callback);
+      }else{
+        player.error();
+      }
+    });
 
-          //as soon as a stream has started, the manifest will list m3u8s, it cannot be empty again BUT the m3u8s in it will be empty after DVR expiration or if one starts a new stream from within the module but doesn't actually stream (tested with DVR enabled, would need to test without DVR).
-            console.log('*xhttp onreadystatechange with status 200: ');
-            console.log(xhttpResponse);
+    let callback = function(error, response, responseBody) {
+                    //trigger spin
+                    spin[0].style.display='block';
 
-          //so we need to loop through all the URLs in the master manifest, assuming all URLs don't start with #
-            xhttpResponseArray = xhttpResponse.split('\n');
-            console.log('array: ');
-            console.log(xhttpResponseArray);
+                    if(error){
+                      console.log('ERROR IN VIDEOJS.XHR request');
+                      return console.log('Error in the XHR call: ' + error);
 
-          //loop through and create a cleaned array with the urls only
-            for (var i=0; i < xhttpResponseArray.length; i++){
-              if(xhttpResponseArray[i].charAt(0) != '#' && xhttpResponseArray[i]){
-                xhttpResponseArrayCleaned.push(xhttpResponseArray[i]);
-              }
-            }
-            console.log('clean array: ');
-            console.log(xhttpResponseArrayCleaned);
+                    }else if(response.statusCode == 404){
+                    //if xhr call has been made but there's an error in the response (most likely response is 'Stream not found' then there is no live stream yet as the current manifest is empty)
+                      console.log('XHR URL ', response.url);
+                      console.log('has a response status 404: ', response.statusCode);         
 
-            //loop through the cleaned array one final time
-            for (i=0; i < xhttpResponseArrayCleaned.length; i++){
-                (function(i) {
-                  nRequest[i] = new XMLHttpRequest();
-                  nRequest[i].open("GET", xhttpResponseArrayCleaned[i], true);
-                
-                  nRequest[i].onreadystatechange = function (oEvent) {
+                      //hide spin
+                      spin[0].style.display = 'none';
 
-                  //if unsuccessful, keep checking other submanifests
-                  if (nRequest[i].readyState == 4 && nRequest[i].status == 404){
-                    console.log('Error: ' + nRequest[i].statusText);
-                    console.log('done... checking again in 15 seconds');
+                      //check again in 15 seconds
+                      console.log('...checking again in 15 seconds...');
 
-                      //last loop, set timeout to fire the checklive function again in 15 seconds
-                      if(i == xhttpResponseArrayCleaned.length-1){
+                      setTimeout(function() {
+                        videojs.xhr(src_m3u8, callback);
+                      }, 15000);
+                      
+                    }else{
+                    //if xhr call has element(s)
+                    console.log('XHR OK ', response)
 
-                        //hide spin
-                        spin[0].style.display='none';
+                    let xhttpResponseArray,
+                        xhttpResponseArrayCleaned = new Array();
 
-                        setTimeout(function() {
-                          checkLive(src_m3u8);
-                        }, 15000);
-                      }
+                    //so we need to loop through all the URLs in the master manifest, assuming all URLs don't start with #
+                      xhttpResponseArray = responseBody.split('\n');
+                      console.log('array: ');
+                      console.log(xhttpResponseArray);
 
-                  //as soon as ONE submanifest is valid, then check that there are at least 3 segments available before playing (same procedure as before)
-                  }else if (nRequest[i].readyState == 4 && nRequest[i].status == 200){
-                    console.log('Segments found, checking that there are at least 3');
-                    console.log(nRequest[i].responseText);
-
-                    let tsResponse = nRequest[i].responseText,
-                        tsResponseArray,
-                        tsResponseArrayCleaned = new Array();
-
-                    tsResponseArray = tsResponse.split('\n');
-                    console.log('ts array: ');
-                    console.log(tsResponseArray);
-
-                    //loop through and create a cleaned array with the segments only
-                      for (i=0; i < tsResponseArray.length; i++){
-                        if(tsResponseArray[i].charAt(0) != '#' && tsResponseArray[i]){
-                          tsResponseArrayCleaned.push(tsResponseArray[i]);
+                    //loop through and create a cleaned array with the urls only
+                      for (var i=0; i < xhttpResponseArray.length; i++){
+                        if(xhttpResponseArray[i].charAt(0) != '#' && xhttpResponseArray[i]){
+                          xhttpResponseArrayCleaned.push(xhttpResponseArray[i]);
                         }
                       }
-                      console.log('ts clean array: ');
-                      console.log(tsResponseArrayCleaned);
+                      console.log('clean array: ');
+                      console.log(xhttpResponseArrayCleaned);
 
-                      console.log('how many segments?');
-                      console.log(tsResponseArrayCleaned.length);
-
+                      //we'll check the first submanifest only, assuming Zencoder does its job properly and if a submanifest/rendition is available then asset and renditions are ready to be played 
+                      if(xhttpResponseArrayCleaned[0].indexOf('.m3u8') > -1){
+                        console.log('m3u8 manifest sill doesn\'t list ts segments, check again');
+                        videojs.xhr(xhttpResponseArrayCleaned[0], callback)
+                      }else{
+                      //should be ts inside m3u8
                       //if we have less than 3 segments, keep checking every 15 seconds
-                        if(tsResponseArrayCleaned.length < 3){
+                        if(xhttpResponseArrayCleaned.length < 3){
                           console.log('less than 3 segments, check again master m3u8');
                           setTimeout(function() {
                             checkLive(src_m3u8);
                           }, 15000);
                         }else{
-                          console.log('at least 3 segments available, ready to go!');
-
                           //remove livecard and stop running
                           console.log('SUCCESS');
+
+                          console.log('at least 3 segments available, ready to go!');
 
                           //hide spin
                           spin[0].style.display='none';
@@ -177,27 +140,23 @@ class LiveCardModal extends ModalDialog {
                           player.liveCardModal.close();
 
                           //player loads current stream
-                          player.load();
+                          player.one('loadstart', function() {player.play()})
+
+                          //check if browser has native hls or not
+                          if (player.tech_.hls) {
+                            player.src(player.tech_.hls.source_);
+                          }else{
+                            player.load();
+                          }
 
                           //LEAVE LOOP otherwise it will test other submanifests
                           return false;
                         }
-                  }
-                };
-                nRequest[i].send();
-              })(i);
-            } //end of loop
-          }
-        };
-    });
-
-    let xhttp = new XMLHttpRequest();
-
-      function checkLive(url){
-        xhttp.open('GET', url, true);
-        xhttp.send();
-      };
+                      }
+                    }
+    }
 }
+
   // Just don't fill for now
   fill() {
     //
