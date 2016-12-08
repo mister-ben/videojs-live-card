@@ -23,16 +23,12 @@ class LiveCardModal extends ModalDialog {
       let errNo = player.error().code;
       let duration = player.duration();
 
-      //Firefox reads network error #2 so we'll convert to 4 for simplicity
-      if((navigator.userAgent.toLowerCase().indexOf('firefox') > -1) && errNo === 2){
+      //Firefox & IE read network error #2 so we'll convert to 4 for simplicity
+      if(((navigator.userAgent.toLowerCase().indexOf('firefox') > -1) && errNo === 2) || (navigator.userAgent.match('MSIE 10.0;')) || (navigator.userAgent.match('rv:11.0'))){
         errNo = 4;
       }
 
       if ((errNo === 4 && duration === 0) || (errNo === 4 && duration === -1) || (errNo === 4 && duration === Infinity)){
-        console.log('*** ERROR ***');
-        console.log(errNo);
-        console.log('*** DURATION ***');
-        console.log(duration);
         this.open();
         player.error(null);
 
@@ -58,13 +54,7 @@ class LiveCardModal extends ModalDialog {
         //we assume the first item in the array is M3U8 when using the live module and only this one will be tested in this release
         global.src_m3u8 = src_array[0].src;
 
-        console.log('SOURCES: ');
-        console.log(src_array);
-
-        console.log('M3U8: ');
-        console.log(src_m3u8);
-
-        //fire the checklive function
+        //fire the xhr function
         videojs.xhr(src_m3u8, callback);
       }else{
         player.error();
@@ -76,35 +66,27 @@ class LiveCardModal extends ModalDialog {
                     spin[0].style.display='block';
 
                     if(error){
-                      console.log('ERROR IN VIDEOJS.XHR request');
                       return console.log('Error in the XHR call: ' + error);
 
                     }else if(response.statusCode == 404){
-                    //if xhr call has been made but there's an error in the response (most likely response is 'Stream not found' then there is no live stream yet as the current manifest is empty)
-                      console.log('XHR URL ', response.url);
-                      console.log('has a response status 404: ', response.statusCode);         
+                    //if xhr call has been made but there's an error in the response (most likely response is 'Stream not found' then there is no live stream yet as the current manifest is empty)      
 
                       //hide spin
                       spin[0].style.display = 'none';
 
                       //check again in 15 seconds
-                      console.log('...checking again in 15 seconds...');
-
                       setTimeout(function() {
                         videojs.xhr(src_m3u8, callback);
                       }, 15000);
                       
                     }else{
                     //if xhr call has element(s)
-                    console.log('XHR OK ', response)
 
                     let xhttpResponseArray,
                         xhttpResponseArrayCleaned = new Array();
 
                     //so we need to loop through all the URLs in the master manifest, assuming all URLs don't start with #
                       xhttpResponseArray = responseBody.split('\n');
-                      console.log('array: ');
-                      console.log(xhttpResponseArray);
 
                     //loop through and create a cleaned array with the urls only
                       for (var i=0; i < xhttpResponseArray.length; i++){
@@ -112,27 +94,17 @@ class LiveCardModal extends ModalDialog {
                           xhttpResponseArrayCleaned.push(xhttpResponseArray[i]);
                         }
                       }
-                      console.log('clean array: ');
-                      console.log(xhttpResponseArrayCleaned);
 
                       //we'll check the first submanifest only, assuming Zencoder does its job properly and if a submanifest/rendition is available then asset and renditions are ready to be played 
                       if(xhttpResponseArrayCleaned[0].indexOf('.m3u8') > -1){
-                        console.log('m3u8 manifest sill doesn\'t list ts segments, check again');
                         videojs.xhr(xhttpResponseArrayCleaned[0], callback)
                       }else{
                       //should be ts inside m3u8
                       //if we have less than 3 segments, keep checking every 15 seconds
                         if(xhttpResponseArrayCleaned.length < 3){
-                          console.log('less than 3 segments, check again master m3u8');
-                          setTimeout(function() {
-                            checkLive(src_m3u8);
-                          }, 15000);
+                          videojs.xhr(src_m3u8, callback);
                         }else{
                           //remove livecard and stop running
-                          console.log('SUCCESS');
-
-                          console.log('at least 3 segments available, ready to go!');
-
                           //hide spin
                           spin[0].style.display='none';
 
