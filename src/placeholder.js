@@ -18,10 +18,20 @@ class LiveCardModal extends ModalDialog {
    */
   constructor(player, options) {
     super(player, options);
+
     this.on(player, 'error', function () {
       //display error card if no stream found 
       let errNo = player.error().code;
       let duration = player.duration();
+      global.intervalTime = options.intervalTime;
+
+      //check the value of the delay timer passed and make sure it is in milliseconds
+      if(Number.isInteger(intervalTime)){
+        intervalTime = parseInt(intervalTime) * 1000;
+      }else{
+        //if value is not a number, default value to check again stream (in milliseconds)
+        intervalTime = 15000;
+      }
 
       //Firefox & IE read network error #2 so we'll convert to 4 for simplicity
       if(((navigator.userAgent.toLowerCase().indexOf('firefox') > -1) && errNo === 2) || (navigator.userAgent.match('MSIE 10.0;')) || (navigator.userAgent.match('rv:11.0'))){
@@ -74,10 +84,10 @@ class LiveCardModal extends ModalDialog {
                       //hide spin
                       spin[0].style.display = 'none';
 
-                      //check again in 15 seconds
+                      //check again in x seconds (default: 15)
                       setTimeout(function() {
                         videojs.xhr(src_m3u8, callback);
-                      }, 15000);
+                      }, intervalTime);
                       
                     }else{
                     //if xhr call has element(s)
@@ -100,7 +110,7 @@ class LiveCardModal extends ModalDialog {
                         videojs.xhr(xhttpResponseArrayCleaned[0], callback)
                       }else{
                       //should be ts inside m3u8
-                      //if we have less than 3 segments, keep checking every 15 seconds
+                      //if we have less than 3 segments, keep checking every x seconds (default: 15)
                         if(xhttpResponseArrayCleaned.length < 3){
                           videojs.xhr(src_m3u8, callback);
                         }else{
