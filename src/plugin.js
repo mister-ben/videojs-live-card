@@ -3,8 +3,9 @@ import LiveCardModal from './placeholder.js';
 
 // Default options for the plugin.
 const defaults = {
-  imageUrl: 'https://upload.wikimedia.org/wikipedia/en/1/1f/TCF.jpg',
-  holdText: 'The live stream has not started'
+  imageUrl: 'http://solutions.brightcove.com/lchok/rscs/imgs/bc-logo-large.png',
+  holdText: 'The live stream has not started',
+  intervalTime: 15
 };
 
 /**
@@ -26,7 +27,8 @@ const onPlayerReady = (player, options) => {
     temporary: false,
     uncloseable: true,
     imageUrl: options.imageUrl,
-    holdText: options.holdText
+    holdText: options.holdText,
+    intervalTime: options.intervalTime
   });
   
   player.liveCardModal = modal;
